@@ -9,4 +9,5 @@ module.exports = Object.freeze({
   nodeEnv: process.env.NODE_ENV || 'development',
   port,
   isProduction: process.env.NODE_ENV === 'production',
+  mongoUri: (process.env.MONGODB_URI || '').trim(),
 });
