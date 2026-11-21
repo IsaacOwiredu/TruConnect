@@ -11,8 +11,6 @@ const reviewSchema = new mongoose.Schema({
     ref: 'Worker',
     required: true,
   },
-  // Set only when a review is tied to a confirmed service interaction.
-  interactionKey: { type: String, trim: true, maxlength: 120, default: undefined },
   rating: { type: Number, required: true, min: 1, max: 5 },
   body: { type: String, required: true, trim: true, minlength: 5, maxlength: 2000 },
   moderationStatus: {
@@ -27,9 +25,6 @@ const reviewSchema = new mongoose.Schema({
 
 reviewSchema.index({ worker: 1, moderationStatus: 1, createdAt: -1 });
 reviewSchema.index({ customer: 1, createdAt: -1 });
-reviewSchema.index(
-  { customer: 1, worker: 1, interactionKey: 1 },
-  { unique: true, partialFilterExpression: { interactionKey: { $type: 'string' } } },
-);
+reviewSchema.index({ customer: 1, worker: 1 }, { unique: true });
 
 module.exports = mongoose.model('Review', reviewSchema);

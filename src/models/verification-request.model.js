@@ -22,6 +22,7 @@ const verificationRequestSchema = new mongoose.Schema({
     default: [],
     select: false,
   },
+  evidenceSummary: { type: String, trim: true, maxlength: 1500, default: '' },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -35,5 +36,6 @@ const verificationRequestSchema = new mongoose.Schema({
 
 verificationRequestSchema.index({ worker: 1, createdAt: -1 });
 verificationRequestSchema.index({ status: 1, createdAt: 1 });
+verificationRequestSchema.index({ worker: 1 }, { unique: true, partialFilterExpression: { status: 'pending' } });
 
 module.exports = mongoose.model('VerificationRequest', verificationRequestSchema);

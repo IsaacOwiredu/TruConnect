@@ -6,6 +6,7 @@ mongoose.set('autoIndex', !isProduction);
 mongoose.set('bufferCommands', false);
 
 const stateNames = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+let intentionalDisconnect = false;
 
 function getDatabaseState() {
   return stateNames[mongoose.connection.readyState] || 'unknown';
@@ -13,7 +14,7 @@ function getDatabaseState() {
 
 async function connectDatabase(uri = mongoUri) {
   if (!uri) {
-    return false;
+    throw new Error('MONGODB_URI must be configured before connecting to MongoDB.');
   }
 
   // Register models before opening the connection so development index creation is ready.
@@ -24,18 +25,25 @@ async function connectDatabase(uri = mongoUri) {
     autoIndex: !isProduction,
   });
 
+  await require('../services/category-seed.service').seedDefaultCategories();
+
   console.info('MongoDB connection established.');
   return true;
 }
 
 async function disconnectDatabase() {
   if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
+    intentionalDisconnect = true;
+    try {
+      await mongoose.disconnect();
+    } finally {
+      intentionalDisconnect = false;
+    }
   }
 }
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('MongoDB connection lost.');
+  if (!intentionalDisconnect) console.warn('MongoDB connection lost.');
 });
 
 mongoose.connection.on('error', () => {
