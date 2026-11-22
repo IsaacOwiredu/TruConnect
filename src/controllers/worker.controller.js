@@ -63,6 +63,10 @@ const submitReview = asyncHandler(async (req, res) => {
     .lean()
     .exec();
   if (!worker?.user) return res.status(404).json({ error: { code: 'WORKER_NOT_FOUND', message: 'Professional profile not found.' } });
+  const existingReview = await Review.exists({ customer: req.user._id, worker: worker._id });
+  if (existingReview) {
+    return res.status(409).json({ error: { code: 'REVIEW_ALREADY_SUBMITTED', message: 'You have already reviewed this professional.' } });
+  }
 
   let review;
   try {

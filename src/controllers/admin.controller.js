@@ -4,13 +4,22 @@ const mongoose = require('mongoose');
 const { Report, Review, ServiceCategory, User, VerificationRequest, Worker } = require('../models');
 const { getPrivateDirectory } = require('../services/verification.service');
 
+async function findWorkerProfileIds() {
+  const workerUserIds = await User.find({ role: 'worker' }).distinct('_id').exec();
+  if (!workerUserIds.length) return [];
+  return Worker.find({ user: { $in: workerUserIds } }).distinct('_id').exec();
+}
+
 async function getMetrics(req, res) {
-  const [users, workers, verifiedWorkers, pendingVerifications, rejectedVerifications, openReports] = await Promise.all([
+  const [users, workerIds] = await Promise.all([
     User.countDocuments({ role: { $in: ['customer', 'worker'] } }),
-    Worker.countDocuments(),
-    Worker.countDocuments({ verificationStatus: 'verified' }),
-    VerificationRequest.countDocuments({ status: 'pending' }),
-    VerificationRequest.countDocuments({ status: 'rejected' }),
+    findWorkerProfileIds(),
+  ]);
+  const [workers, verifiedWorkers, pendingVerifications, rejectedVerifications, openReports] = await Promise.all([
+    Worker.countDocuments({ _id: { $in: workerIds } }),
+    Worker.countDocuments({ _id: { $in: workerIds }, verificationStatus: 'verified' }),
+    VerificationRequest.countDocuments({ worker: { $in: workerIds }, status: 'pending' }),
+    VerificationRequest.countDocuments({ worker: { $in: workerIds }, status: 'rejected' }),
     Report.countDocuments({ status: { $in: ['open', 'reviewing'] } }),
   ]);
   res.json({ data: { users, workers, verifiedWorkers, pendingVerifications, rejectedVerifications, openReports } });
@@ -27,11 +36,22 @@ async function listUsers(req, res) {
     { email: new RegExp(req.query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
   ];
 
-  const [items, total] = await Promise.all([
+  const [items, total, duplicateEmailGroups] = await Promise.all([
     User.find(filter).select('_id fullName email role accountStatus createdAt').sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
     User.countDocuments(filter),
+    User.aggregate([
+      { $group: { _id: '$email', count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+      { $project: { _id: 1 } },
+    ]).exec(),
   ]);
-  res.json({ data: items, meta: { total, page, limit } });
+  const duplicateEmails = new Set(duplicateEmailGroups.map((group) => group._id));
+  const data = items.map((user) => ({
+    ...user,
+    isCurrentUser: String(user._id) === String(req.user._id),
+    hasDuplicateEmail: duplicateEmails.has(user.email),
+  }));
+  res.json({ data, meta: { total, page, limit } });
 }
 
 async function setUserStatus(req, res) {
@@ -54,12 +74,17 @@ async function setUserStatus(req, res) {
 }
 
 async function listVerificationRequests(req, res) {
-  const filter = req.query.status ? { status: req.query.status } : {};
+  const workerIds = await findWorkerProfileIds();
+  const filter = {
+    worker: { $in: workerIds },
+    ...(req.query.status ? { status: req.query.status } : {}),
+  };
   const page = Number(req.query.page || 1);
   const limit = Number(req.query.limit || 20);
   const [requests, total] = await Promise.all([
     VerificationRequest.find(filter)
-      .select('+documents +reviewNote')
+      .schemaLevelProjections(false)
+      .select('_id worker submittedBy documents evidenceSummary status reviewNote reviewedBy reviewedAt createdAt updatedAt')
       .populate({ path: 'worker', select: 'user location verificationStatus', populate: { path: 'user', select: 'fullName email' } })
       .populate({ path: 'submittedBy', select: 'fullName email' })
       .populate({ path: 'reviewedBy', select: 'fullName' })
@@ -82,7 +107,11 @@ async function listVerificationRequests(req, res) {
 
 async function downloadVerificationDocument(req, res, next) {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: { code: 'DOCUMENT_NOT_FOUND', message: 'Verification document not found.' } });
-  const request = await VerificationRequest.findById(req.params.id).select('+documents').lean().exec();
+  const request = await VerificationRequest.findById(req.params.id)
+    .schemaLevelProjections(false)
+    .select('documents')
+    .lean()
+    .exec();
   const document = request?.documents?.find((item) => item.storageKey === req.params.storageKey);
   if (!document || path.basename(document.storageKey) !== document.storageKey) {
     return res.status(404).json({ error: { code: 'DOCUMENT_NOT_FOUND', message: 'Verification document not found.' } });

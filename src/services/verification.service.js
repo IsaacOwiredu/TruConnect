@@ -3,7 +3,9 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { VerificationRequest, Worker } = require('../models');
 
-const privateDirectory = path.resolve(__dirname, '../../uploads/private/verification');
+const privateDirectory = path.resolve(
+  process.env.TRUCONNECT_PRIVATE_UPLOAD_DIR || path.resolve(__dirname, '../../uploads/private/verification'),
+);
 const fileTypes = [
   { mime: 'application/pdf', extension: 'pdf', signature: (buffer) => buffer.subarray(0, 5).toString() === '%PDF-' },
   { mime: 'image/jpeg', extension: 'jpg', signature: (buffer) => buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff },

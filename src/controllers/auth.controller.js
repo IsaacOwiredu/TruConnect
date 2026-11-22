@@ -9,6 +9,10 @@ async function register(req, res) {
   const fullName = req.body.fullName.trim();
   const email = req.body.email.trim().toLowerCase();
   const role = req.body.role;
+  const existingUser = await User.exists({ email });
+  if (existingUser) {
+    return res.status(409).json({ error: { code: 'EMAIL_ALREADY_REGISTERED', message: 'An account already exists for that email address. Log in or use a different email.' } });
+  }
   const passwordHash = await bcrypt.hash(req.body.password, BCRYPT_COST);
 
   const user = await User.create({ fullName, email, passwordHash, role });

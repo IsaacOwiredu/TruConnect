@@ -148,7 +148,10 @@
     body.replaceChildren();
     data.forEach((report) => {
       const row = api.el('tr');
-      cell(row, report.targetUser?.fullName || 'Account');
+      const account = api.el('td');
+      account.append(api.el('strong', report.targetUser?.fullName || 'Account'));
+      if (report.targetUser) account.append(api.el('small', `${report.targetUser.role} · ${report.targetUser.accountStatus}`));
+      row.append(account);
       cell(row, report.reason);
       const details = api.el('td');
       details.append(api.el('p', report.details));
@@ -168,6 +171,17 @@
         actions.append(button('Dismiss', () => change(`/api/v1/admin/reports/${report._id}`, { status: 'dismissed' }, 'Report dismissed.'), 'button button-small button-outline'));
       } else {
         actions.append(api.el('span', 'Closed'));
+      }
+      if (['open', 'reviewing'].includes(report.status)
+        && report.targetUser?._id
+        && report.targetUser.accountStatus === 'active'
+        && report.targetUser.role !== 'admin') {
+        actions.append(button('Suspend account', () => {
+          const name = report.targetUser.fullName || 'this account';
+          if (window.confirm(`Suspend ${name}? They will lose access until an admin reactivates the account.`)) {
+            change(`/api/v1/admin/users/${report.targetUser._id}/status`, { accountStatus: 'suspended' }, 'Reported account suspended.');
+          }
+        }, 'button button-small button-outline'));
       }
       row.append(actions);
       body.append(row);
@@ -189,12 +203,19 @@
     data.forEach((user) => {
       const row = api.el('tr');
       cell(row, user.fullName);
-      cell(row, user.email);
+      const emailCell = api.el('td');
+      emailCell.append(globalThis.document.createTextNode(user.email));
+      if (user.hasDuplicateEmail) emailCell.append(api.el('small', 'Duplicate email — review these account records'));
+      row.append(emailCell);
       cell(row, user.role);
       cell(row, user.accountStatus);
       const actions = api.el('td', undefined, 'action-cell');
-      const nextStatus = user.accountStatus === 'active' ? 'suspended' : 'active';
-      actions.append(button(nextStatus === 'active' ? 'Reactivate' : 'Suspend', () => change(`/api/v1/admin/users/${user._id}/status`, { accountStatus: nextStatus }, `Account ${nextStatus}.`), 'button button-small button-outline'));
+      if (user.isCurrentUser && user.accountStatus === 'active') {
+        actions.append(api.el('span', 'Your account'));
+      } else {
+        const nextStatus = user.accountStatus === 'active' ? 'suspended' : 'active';
+        actions.append(button(nextStatus === 'active' ? 'Reactivate' : 'Suspend', () => change(`/api/v1/admin/users/${user._id}/status`, { accountStatus: nextStatus }, `Account ${nextStatus}.`), 'button button-small button-outline'));
+      }
       row.append(actions);
       body.append(row);
     });

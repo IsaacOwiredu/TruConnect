@@ -9,6 +9,40 @@ menuButton?.addEventListener('click', () => {
   if (dashboardSidebar) dashboardSidebar.classList.toggle('open', open);
 });
 
+const homeCategoryChips = document.querySelector('#home-category-chips');
+if (homeCategoryChips) {
+  fetch('/api/v1/categories')
+    .then(async (response) => {
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message || 'Categories are temporarily unavailable.');
+      return result.data;
+    })
+    .then((categories) => {
+      const fragment = document.createDocumentFragment();
+      categories.slice(0, 5).forEach((category) => {
+        const link = document.createElement('a');
+        link.href = `/workers.html?category=${encodeURIComponent(category.slug)}`;
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = category.icon || '✳';
+        link.append(icon, document.createTextNode(` ${category.name}`));
+        fragment.append(link);
+      });
+      const all = document.createElement('a');
+      all.href = '/workers.html';
+      all.append(document.createTextNode('Explore all '));
+      const arrow = document.createElement('span');
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '→';
+      all.append(arrow);
+      fragment.append(all);
+      homeCategoryChips.replaceChildren(fragment);
+    })
+    .catch(() => {
+      // Keep the Explore all link when the database is not available.
+    });
+}
+
 document.querySelectorAll('.password-toggle').forEach((toggle) => {
   toggle.addEventListener('click', () => {
     const input = toggle.parentElement.querySelector('input');
