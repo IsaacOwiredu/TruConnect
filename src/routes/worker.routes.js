@@ -17,6 +17,7 @@ router.get('/', [
   query('location').optional().trim().isLength({ max: 100 }),
   query('category').optional().matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   query('verified').optional().isIn(['true', 'false', '1', '0']),
+  query('availability').optional().isIn(['available', 'unavailable']),
   query('minRating').optional().isFloat({ min: 0, max: 5 }).toFloat(),
   query('sort').optional().isIn(['recommended', 'rating']),
   query('page').optional().isInt({ min: 1, max: 100000 }).toInt(),

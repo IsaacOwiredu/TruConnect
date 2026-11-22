@@ -39,6 +39,9 @@ function profilePipeline(workerId, filters = {}) {
   if (filters.verifiedOnly) {
     pipeline.push({ $match: { verificationStatus: 'verified' } });
   }
+  if (filters.availability) {
+    pipeline.push({ $match: { availability: filters.availability } });
+  }
 
   pipeline.push(
     { $lookup: { from: 'servicecategories', localField: 'categories', foreignField: '_id', as: 'categoryDetails' } },

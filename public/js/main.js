@@ -22,7 +22,7 @@ document.querySelectorAll('.password-toggle').forEach((toggle) => {
 const filterForm = document.querySelector('#worker-filters');
 if (filterForm) {
   const params = new URLSearchParams(window.location.search);
-  for (const field of ['q', 'location', 'category', 'minRating']) {
+  for (const field of ['q', 'location', 'category', 'minRating', 'availability']) {
     if (params.has(field) && filterForm.elements[field]) {
       filterForm.elements[field].value = params.get(field);
     }
@@ -125,6 +125,7 @@ if (filterForm) {
       location: filterForm.elements.location.value,
       category: filterForm.elements.category.value,
       minRating: filterForm.elements.minRating.value,
+      availability: filterForm.elements.availability.value,
     };
     for (const [key, value] of Object.entries(fields)) if (value) searchParams.set(key, value);
     if (filterForm.elements.verified.checked) searchParams.set('verified', 'true');

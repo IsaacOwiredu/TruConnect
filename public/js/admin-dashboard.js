@@ -175,7 +175,13 @@
   }
 
   async function loadUsers() {
-    const { data, meta } = await api.request(pagedEndpoint('/api/v1/admin/users', 'user'));
+    const form = document.querySelector('#user-filter-form');
+    const query = new URLSearchParams({ page: String(pages.user), limit: String(pageSize) });
+    const search = form.elements.q.value.trim();
+    if (search) query.set('q', search);
+    if (form.elements.role.value) query.set('role', form.elements.role.value);
+    if (form.elements.status.value) query.set('status', form.elements.status.value);
+    const { data, meta } = await api.request(`/api/v1/admin/users?${query.toString()}`);
     const body = clear('user-rows', 5, data.length ? '' : 'No accounts yet.');
     renderPagination('user-pagination', 'user', meta, loadUsers);
     if (!data.length) return;
@@ -244,6 +250,11 @@
   });
 
   document.querySelector('#refresh-admin').addEventListener('click', refresh);
+  document.querySelector('#user-filter-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    pages.user = 1;
+    loadUsers().catch((error) => api.message(status, error.message || 'Could not load accounts.', true));
+  });
   document.querySelector('#verification-status-filter').addEventListener('change', () => {
     pages.verification = 1;
     loadVerifications().catch((error) => api.message(status, error.message || 'Could not load verification requests.', true));

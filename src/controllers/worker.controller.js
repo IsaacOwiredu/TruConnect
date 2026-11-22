@@ -8,6 +8,7 @@ function queryFilters(query) {
     search: query.q || '',
     location: query.location || '',
     category: query.category || '',
+    availability: query.availability || '',
     verifiedOnly: ['true', '1'].includes(query.verified),
     minRating: Number(query.minRating || 0),
     sort: query.sort || 'recommended',
