@@ -46,8 +46,13 @@
   }
 
   async function loadVerifications() {
-    const { data } = await api.request('/api/v1/admin/verification-requests?status=pending');
-    const body = clear('verification-rows', 6, data.length ? '' : 'No pending applications.');
+    const statusFilter = document.querySelector('#verification-status-filter').value;
+    const endpoint = statusFilter === 'all'
+      ? '/api/v1/admin/verification-requests'
+      : `/api/v1/admin/verification-requests?status=${encodeURIComponent(statusFilter)}`;
+    const { data } = await api.request(endpoint);
+    const emptyMessage = statusFilter === 'all' ? 'No verification requests yet.' : `No ${statusFilter} applications.`;
+    const body = clear('verification-rows', 6, data.length ? '' : emptyMessage);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((request) => {
@@ -67,20 +72,31 @@
       });
       if (!request.documents?.length) docs.textContent = 'No documents';
       row.append(docs);
-      const actions = api.el('td', undefined, 'action-cell');
-      actions.append(button('Approve', () => change(`/api/v1/admin/verification-requests/${request._id}`, { status: 'approved' }, 'Verification approved.'), 'button button-small'));
-      actions.append(button('Reject', () => {
-        const reviewNote = window.prompt('Add a short reason for the decision (optional):') || '';
-        change(`/api/v1/admin/verification-requests/${request._id}`, { status: 'rejected', reviewNote }, 'Verification rejected.');
-      }, 'button button-small button-outline'));
-      row.append(actions);
+      const decision = api.el('td', undefined, 'action-cell');
+      if (request.status === 'pending') {
+        decision.append(button('Approve', () => change(`/api/v1/admin/verification-requests/${request._id}`, { status: 'approved' }, 'Verification approved.'), 'button button-small'));
+        decision.append(button('Reject', () => {
+          const reviewNote = window.prompt('Add a short reason for the decision (optional):') || '';
+          change(`/api/v1/admin/verification-requests/${request._id}`, { status: 'rejected', reviewNote }, 'Verification rejected.');
+        }, 'button button-small button-outline'));
+      } else {
+        decision.append(api.el('strong', request.status));
+        if (request.reviewNote) decision.append(api.el('small', `Note: ${request.reviewNote}`));
+        if (request.reviewedAt) decision.append(api.el('small', `Reviewed ${new Date(request.reviewedAt).toLocaleDateString()}`));
+      }
+      row.append(decision);
       body.append(row);
     });
   }
 
   async function loadReviews() {
-    const { data } = await api.request('/api/v1/admin/reviews?status=pending');
-    const body = clear('review-rows', 5, data.length ? '' : 'No reviews are waiting for moderation.');
+    const statusFilter = document.querySelector('#review-status-filter').value;
+    const endpoint = statusFilter === 'all'
+      ? '/api/v1/admin/reviews'
+      : `/api/v1/admin/reviews?status=${encodeURIComponent(statusFilter)}`;
+    const { data } = await api.request(endpoint);
+    const emptyMessage = statusFilter === 'all' ? 'No reviews yet.' : `No ${statusFilter} reviews.`;
+    const body = clear('review-rows', 5, data.length ? '' : emptyMessage);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((review) => {
@@ -89,33 +105,51 @@
       cell(row, review.worker?.user?.fullName || 'Worker');
       cell(row, `${review.rating} / 5`);
       cell(row, review.body);
-      const actions = api.el('td', undefined, 'action-cell');
-      ['approved', 'rejected', 'hidden'].forEach((decision) => actions.append(button(decision, () => change(`/api/v1/admin/reviews/${review._id}`, { moderationStatus: decision }, `Review ${decision}.`), 'button button-small button-outline')));
-      row.append(actions);
+      const decision = api.el('td', undefined, 'action-cell');
+      if (review.moderationStatus === 'pending') {
+        ['approved', 'rejected', 'hidden'].forEach((nextStatus) => decision.append(button(nextStatus, () => change(`/api/v1/admin/reviews/${review._id}`, { moderationStatus: nextStatus }, `Review ${nextStatus}.`), 'button button-small button-outline')));
+      } else {
+        decision.append(api.el('strong', review.moderationStatus));
+        if (review.moderatedAt) decision.append(api.el('small', `Reviewed ${new Date(review.moderatedAt).toLocaleDateString()}`));
+      }
+      row.append(decision);
       body.append(row);
     });
   }
 
   async function loadReports() {
-    const result = await api.request('/api/v1/admin/reports');
-    const data = result.data.filter((report) => ['open', 'reviewing'].includes(report.status));
-    const body = clear('report-rows', 6, data.length ? '' : 'No open reports.');
+    const statusFilter = document.querySelector('#report-status-filter').value;
+    const endpoint = statusFilter === 'all'
+      ? '/api/v1/admin/reports'
+      : `/api/v1/admin/reports?status=${encodeURIComponent(statusFilter)}`;
+    const { data } = await api.request(endpoint);
+    const emptyMessage = statusFilter === 'all' ? 'No reports yet.' : `No ${statusFilter} reports.`;
+    const body = clear('report-rows', 6, data.length ? '' : emptyMessage);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((report) => {
       const row = api.el('tr');
       cell(row, report.targetUser?.fullName || 'Account');
       cell(row, report.reason);
-      cell(row, report.details);
+      const details = api.el('td');
+      details.append(api.el('p', report.details));
+      if (report.resolutionNote) details.append(api.el('small', `Resolution: ${report.resolutionNote}`));
+      row.append(details);
       cell(row, report.reporter?.fullName || 'Customer');
       cell(row, report.status);
       const actions = api.el('td', undefined, 'action-cell');
-      actions.append(button('Review', () => change(`/api/v1/admin/reports/${report._id}`, { status: 'reviewing' }, 'Report marked as reviewing.'), 'button button-small button-outline'));
-      actions.append(button('Resolve', () => {
-        const resolutionNote = window.prompt('Add a resolution note (optional):') || '';
-        change(`/api/v1/admin/reports/${report._id}`, { status: 'resolved', resolutionNote }, 'Report resolved.');
-      }, 'button button-small'));
-      actions.append(button('Dismiss', () => change(`/api/v1/admin/reports/${report._id}`, { status: 'dismissed' }, 'Report dismissed.'), 'button button-small button-outline'));
+      if (['open', 'reviewing'].includes(report.status)) {
+        if (report.status === 'open') {
+          actions.append(button('Review', () => change(`/api/v1/admin/reports/${report._id}`, { status: 'reviewing' }, 'Report marked as reviewing.'), 'button button-small button-outline'));
+        }
+        actions.append(button('Resolve', () => {
+          const resolutionNote = window.prompt('Add a resolution note (optional):') || '';
+          change(`/api/v1/admin/reports/${report._id}`, { status: 'resolved', resolutionNote }, 'Report resolved.');
+        }, 'button button-small'));
+        actions.append(button('Dismiss', () => change(`/api/v1/admin/reports/${report._id}`, { status: 'dismissed' }, 'Report dismissed.'), 'button button-small button-outline'));
+      } else {
+        actions.append(api.el('span', 'Closed'));
+      }
       row.append(actions);
       body.append(row);
     });
@@ -190,6 +224,15 @@
   });
 
   document.querySelector('#refresh-admin').addEventListener('click', refresh);
+  document.querySelector('#verification-status-filter').addEventListener('change', () => {
+    loadVerifications().catch((error) => api.message(status, error.message || 'Could not load verification requests.', true));
+  });
+  document.querySelector('#review-status-filter').addEventListener('change', () => {
+    loadReviews().catch((error) => api.message(status, error.message || 'Could not load reviews.', true));
+  });
+  document.querySelector('#report-status-filter').addEventListener('change', () => {
+    loadReports().catch((error) => api.message(status, error.message || 'Could not load reports.', true));
+  });
   refresh();
   window.addEventListener('hashchange', refresh);
 })();
