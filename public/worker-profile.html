@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Professional profile — TruConnect</title><link rel="stylesheet" href="/css/styles.css"><script src="/js/main.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Professional profile — TruConnect</title><link rel="stylesheet" href="/css/styles.css"><script src="/js/api.js" defer></script><script src="/js/main.js" defer></script><script src="/js/worker-profile.js" defer></script></head>
 <body>
   <header class="site-header"><a class="brand" href="/">tru<span>connect</span><i>.</i></a><nav class="main-nav"><a href="/workers.html">Find a professional</a><a href="/#how">How it works</a><a href="/login.html">Log in</a><a class="button button-small" href="/register.html">Join TruConnect <span>↗</span></a></nav><button class="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button></header>
   <main class="profile-page">
@@ -8,7 +8,7 @@
     <p class="results-message" id="profile-message" role="status" aria-live="polite">Loading professional profile…</p>
     <section class="profile-cover"><div class="profile-cover-mark">✳</div></section>
     <section class="profile-main" id="profile-content" hidden>
-      <div class="profile-top"><div class="profile-avatar photo-one" id="profile-initials"></div><div class="profile-actions"><a class="button" id="phone-contact" hidden>Call professional <span>↗</span></a><a class="button button-outline" id="wa-contact" target="_blank" rel="noopener" hidden>WhatsApp <span>↗</span></a></div></div>
+      <div class="profile-top"><div class="profile-avatar photo-one" id="profile-avatar"><span id="profile-initials"></span><img id="profile-photo" alt="" hidden></div><div class="profile-actions"><a class="button" id="phone-contact" hidden>Call professional <span>↗</span></a><a class="button button-outline" id="wa-contact" target="_blank" rel="noopener" hidden>WhatsApp <span>↗</span></a></div></div>
       <div class="profile-heading"><div class="verified-line" id="profile-verification"></div><h1 id="profile-name"></h1><p class="profile-subtitle" id="profile-trade"></p><p class="rating" id="profile-rating"></p></div>
       <div class="profile-columns">
         <div>

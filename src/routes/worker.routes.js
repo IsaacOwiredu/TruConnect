@@ -4,10 +4,11 @@ const asyncHandler = require('../middleware/async-handler');
 const { authorizeRoles, requireAuth } = require('../middleware/require-auth');
 const { csrfProtection } = require('../middleware/csrf-protection');
 const validateRequest = require('../middleware/validate-request');
-const { getMyProfile, getWorker, getWorkerReviews, listWorkers, submitReview, updateMyProfile } = require('../controllers/worker.controller');
+const { getMyProfile, getWorker, getWorkerReviews, listWorkers, submitReview, updateMyProfile, updateMyProfileImage } = require('../controllers/worker.controller');
 const { reportWorker } = require('../controllers/report.controller');
 const { submitMyVerification } = require('../controllers/verification.controller');
 const { handleVerificationUploadError, verificationUpload } = require('../middleware/verification-upload');
+const { handleProfileImageUploadError, profileImageUpload } = require('../middleware/profile-image-upload');
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.put('/me', requireAuth, authorizeRoles('worker'), csrfProtection, [
   body('whatsapp').optional({ values: 'falsy' }).matches(/^[+0-9\s().-]{7,30}$/).withMessage('Enter a valid WhatsApp number.'),
   body('availability').optional().isIn(['available', 'unavailable']),
 ], validateRequest, asyncHandler(updateMyProfile));
+router.post('/me/profile-image', requireAuth, authorizeRoles('worker'), csrfProtection, profileImageUpload.single('profileImage'), handleProfileImageUploadError, asyncHandler(updateMyProfileImage));
 router.post('/me/verification', requireAuth, authorizeRoles('worker'), csrfProtection, verificationUpload.array('documents', 4), handleVerificationUploadError, [
   body('evidenceSummary').optional().isString().trim().isLength({ max: 1500 }),
 ], validateRequest, submitMyVerification);

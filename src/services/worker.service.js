@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
+const crypto = require('node:crypto');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const { Review, ServiceCategory, Worker } = require('../models');
+
+const publicProfileImageDirectory = path.resolve(__dirname, '../../public/uploads/profiles');
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -54,9 +59,7 @@ function profilePipeline(workerId, filters = {}) {
 
   if (filters.minRating > 0) pipeline.push({ $match: { averageRating: { $gte: filters.minRating } } });
 
-  pipeline.push(
-    { $sort: filters.sort === 'rating' ? { averageRating: -1, reviewCount: -1, updatedAt: -1 } : { updatedAt: -1, _id: 1 } },
-    { $project: {
+  const publicFields = {
       _id: 1,
       fullName: '$user.fullName',
       categories: { $map: { input: '$categoryDetails', as: 'category', in: { name: '$$category.name', slug: '$$category.slug' } } },
@@ -64,14 +67,20 @@ function profilePipeline(workerId, filters = {}) {
       experienceYears: 1,
       description: 1,
       location: 1,
-      phone: 1,
-      whatsapp: 1,
       profileImagePath: 1,
       availability: 1,
       verificationStatus: 1,
       averageRating: 1,
       reviewCount: 1,
-    } },
+  };
+  if (workerId) {
+    publicFields.phone = 1;
+    publicFields.whatsapp = 1;
+  }
+
+  pipeline.push(
+    { $sort: filters.sort === 'rating' ? { averageRating: -1, reviewCount: -1, updatedAt: -1 } : { updatedAt: -1, _id: 1 } },
+    { $project: publicFields },
   );
 
   return pipeline;
@@ -143,10 +152,51 @@ async function updateWorkerProfile(userId, input) {
   return findWorkerProfileForUser(userId);
 }
 
+async function updateWorkerProfileImage(userId, file) {
+  const worker = await Worker.findOne({ user: userId }).exec();
+  if (!worker) return null;
+  const types = [
+    { mime: 'image/jpeg', extension: 'jpg', valid: (buffer) => buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff },
+    { mime: 'image/png', extension: 'png', valid: (buffer) => buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+    { mime: 'image/webp', extension: 'webp', valid: (buffer) => buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP' },
+  ];
+  const type = types.find((item) => item.mime === file.mimetype && item.valid(file.buffer));
+  if (!type) {
+    const error = new Error('The image content did not match its file type. Upload a valid JPEG, PNG, or WebP image.');
+    error.statusCode = 415;
+    error.code = 'INVALID_PROFILE_IMAGE';
+    throw error;
+  }
+
+  await fs.mkdir(publicProfileImageDirectory, { recursive: true });
+  const fileName = `${crypto.randomUUID()}.${type.extension}`;
+  const absolutePath = path.join(publicProfileImageDirectory, fileName);
+  await fs.writeFile(absolutePath, file.buffer, { flag: 'wx', mode: 0o644 });
+  const previousPath = worker.profileImagePath;
+  worker.profileImagePath = `/uploads/profiles/${fileName}`;
+  try {
+    await worker.save();
+  } catch (error) {
+    await fs.unlink(absolutePath).catch(() => {});
+    throw error;
+  }
+  if (previousPath?.startsWith('/uploads/profiles/')) {
+    const oldName = path.basename(previousPath);
+    if (oldName === previousPath.slice('/uploads/profiles/'.length)) {
+      await fs.unlink(path.join(publicProfileImageDirectory, oldName)).catch(() => {});
+    }
+  }
+  return findWorkerProfileForUser(userId);
+}
+
 async function listApprovedReviews(workerId, page = 1, limit = 10) {
   if (!mongoose.isValidObjectId(workerId)) return null;
-  const workerExists = await Worker.exists({ _id: workerId });
-  if (!workerExists) return null;
+  const worker = await Worker.findById(workerId)
+    .select('_id user')
+    .populate({ path: 'user', match: { role: 'worker', accountStatus: 'active' }, select: '_id' })
+    .lean()
+    .exec();
+  if (!worker?.user) return null;
 
   const [items, total] = await Promise.all([
     Review.find({ worker: workerId, moderationStatus: 'approved' })
@@ -162,4 +212,4 @@ async function listApprovedReviews(workerId, page = 1, limit = 10) {
   return { items, total };
 }
 
-module.exports = { findPublicWorker, findWorkerProfileForUser, findWorkers, listApprovedReviews, updateWorkerProfile };
+module.exports = { findPublicWorker, findWorkerProfileForUser, findWorkers, listApprovedReviews, updateWorkerProfile, updateWorkerProfileImage };

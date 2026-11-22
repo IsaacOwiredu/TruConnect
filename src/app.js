@@ -35,6 +35,7 @@ function createApp() {
   app.use('/api/v1/auth', requireDatabase);
   app.use('/api/v1/workers', requireDatabase);
   app.use('/api/v1/admin', requireDatabase);
+  app.use('/api/v1/customer', requireDatabase);
   app.use('/api', apiRoutes);
   app.get('/dashboard-customer.html', requireAuth, authorizeRoles('customer'), (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'dashboard-customer.html'));

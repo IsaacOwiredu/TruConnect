@@ -52,11 +52,18 @@ if (filterForm) {
     photo.href = profileUrl;
     photo.setAttribute('aria-label', `View ${worker.fullName}'s profile`);
     const initials = worker.fullName.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('');
-    photo.append(element('span', '', initials));
+    photo.append(element('span', 'worker-initials', initials));
     const available = element('span', 'available-pill');
     const dot = element('i');
     available.append(dot, document.createTextNode(worker.availability === 'available' ? ' Available' : ' Unavailable'));
     photo.append(available);
+    if (worker.profileImagePath) {
+      const portrait = element('img', 'worker-photo-image');
+      portrait.src = worker.profileImagePath;
+      portrait.alt = '';
+      portrait.loading = 'lazy';
+      photo.prepend(portrait);
+    }
     card.append(photo);
 
     const info = element('div', 'worker-info');

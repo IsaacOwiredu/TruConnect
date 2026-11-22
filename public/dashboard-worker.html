@@ -1,1 +1,48 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Worker dashboard — TruConnect</title><link rel="stylesheet" href="/css/styles.css"><script src="/js/main.js" defer></script></head><body class="dashboard-body"><aside class="dash-sidebar"><a class="brand" href="/">tru<span>connect</span><i>.</i></a><p class="dash-label">WORKSPACE</p><nav><a class="dash-nav active" href="/dashboard-worker.html"><span>◫</span> Overview</a><a class="dash-nav" href="#profile"><span>◎</span> My profile</a><a class="dash-nav" href="#enquiries"><span>✉</span> Enquiries <i class="nav-count">0</i></a><a class="dash-nav" href="#reviews"><span>☆</span> Reviews</a><a class="dash-nav" href="#verification"><span>✓</span> Verification</a></nav><div class="sidebar-bottom"><a href="/">← Back to website</a><a href="/login.html" data-logout>Log out</a></div></aside><main class="dash-main"><header class="dash-topbar"><button class="menu-toggle dash-menu" aria-label="Open menu" aria-expanded="false">☰</button><span>Worker workspace <span class="demo-chip">PREVIEW</span></span><div class="dash-user"><span class="user-avatar worker-user" id="dashboard-initials">TC</span><span><strong id="dashboard-display-name">Your account</strong><small>Electrician</small></span></div></header><div class="dash-content"><div class="dash-welcome"><div><p class="eyebrow">SATURDAY, 21 NOVEMBER</p><h1 id="dashboard-greeting">Welcome back</h1><p>Your skills make a difference. Keep your profile up to date.</p></div><a class="button" href="#profile">Edit my profile <span>↗</span></a></div><div class="profile-completion"><div><span class="completion-icon">◎</span><span><strong>Your profile is getting started</strong><small>Complete your details so customers can discover your services.</small></span></div><a href="#profile">Continue setup <span>→</span></a></div><div class="dash-stats"><article><span class="stat-icon">◉</span><small>PROFILE VIEWS</small><strong>—</strong><span>Stats appear once your profile is live</span></article><article><span class="stat-icon">✉</span><small>NEW ENQUIRIES</small><strong>—</strong><span>Customer enquiries will show here</span></article><article><span class="stat-icon">✓</span><small>VERIFICATION</small><strong class="stat-word">Not submitted</strong><span>Your status will show here</span></article></div><section class="dash-panel" id="verification"><div class="panel-heading"><div><p class="eyebrow">Build trust with customers</p><h2>Get your profile ready</h2><p class="muted">A complete profile helps customers understand what you offer.</p></div></div><div class="setup-steps"><div class="setup-step"><span>01</span><div><strong>Add your professional details</strong><small>Skills, experience, service area and contact information</small></div><a href="#profile">Set up <b>→</b></a></div><div class="setup-step"><span>02</span><div><strong>Submit for verification</strong><small>Share your information with the admin team for review</small></div><a href="#verification">Learn more <b>→</b></a></div></div></section><div class="demo-note">Profile editing, customer enquiries, and verification submissions will be added in their feature phases.</div></div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Worker dashboard — TruConnect</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/api.js" defer></script><script src="/js/main.js" defer></script><script src="/js/worker-dashboard.js" defer></script>
+</head>
+<body class="dashboard-body">
+  <aside class="dash-sidebar"><a class="brand" href="/">tru<span>connect</span><i>.</i></a><p class="dash-label">WORKSPACE</p>
+    <nav><a class="dash-nav active" href="/dashboard-worker.html"><span>◫</span> Overview</a><a class="dash-nav" href="#profile"><span>◎</span> My profile</a><a class="dash-nav" href="#verification"><span>✓</span> Verification</a><a class="dash-nav" href="#reviews"><span>☆</span> Public profile</a></nav>
+    <div class="sidebar-bottom"><a href="/">← Back to website</a><a href="/login.html" data-logout>Log out</a></div>
+  </aside>
+  <main class="dash-main">
+    <header class="dash-topbar"><button class="menu-toggle dash-menu" aria-label="Open menu" aria-expanded="false">☰</button><span>Worker workspace</span><div class="dash-user"><span class="user-avatar worker-user" id="dashboard-initials">TC</span><span><strong id="dashboard-display-name">Your account</strong><small id="worker-trade-label">Professional</small></span></div></header>
+    <div class="dash-content" id="worker-dashboard">
+      <div class="dash-welcome"><div><p class="eyebrow">YOUR PROFESSIONAL SPACE</p><h1 id="dashboard-greeting">Welcome back</h1><p>Keep your services and contact details up to date so customers can find you.</p></div><a class="button" href="#profile">Edit my profile <span>↗</span></a></div>
+      <p class="form-message" id="worker-profile-message" role="status" aria-live="polite" hidden></p>
+      <div class="dash-stats"><article><span class="stat-icon">◎</span><small>PROFILE STATUS</small><strong class="stat-word">Public</strong><span>Your listing is available in search</span></article><article><span class="stat-icon">✓</span><small>VERIFICATION</small><strong class="stat-word" id="worker-verification-stat">Loading</strong><span id="worker-verification-state">Checking your status…</span></article></div>
+
+      <section class="dash-panel" id="profile"><div class="panel-heading"><div><p class="eyebrow">Your public listing</p><h2>Professional profile</h2><p class="muted">Your name and account email come from your TruConnect account.</p></div></div>
+        <form id="profile-image-form" class="dash-form compact-form"><label>Profile picture<input name="profileImage" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPEG, PNG, or WebP. Maximum size 2 MB.</small></label><img id="worker-photo-preview" class="profile-photo-preview" alt="Your current profile picture" hidden><button class="button button-outline" type="submit">Upload picture</button><p class="form-message" id="profile-image-message" role="status" aria-live="polite" hidden></p></form>
+        <form id="worker-profile-form" class="dash-form">
+          <label>Service categories <small>Choose up to five</small><select name="categories" multiple size="5" aria-describedby="category-help"></select><small id="category-help">Hold Ctrl (Windows) or Command (Mac) to select more than one.</small></label>
+          <label>Skills <small>Separate skills with commas</small><input name="skills" maxlength="1200" placeholder="House wiring, repairs, installations"></label>
+          <div class="form-two"><label>Years of experience<input name="experienceYears" type="number" min="0" max="80" value="0"></label><label>Availability<select name="availability"><option value="available">Available</option><option value="unavailable">Unavailable</option></select></label></div>
+          <label>About your services<textarea name="description" maxlength="2000" rows="5" placeholder="Describe the services you provide and the work you specialize in."></textarea></label>
+          <div class="form-two"><label>City or town<input name="city" maxlength="100" placeholder="Accra"></label><label>Region<input name="region" maxlength="100" placeholder="Greater Accra"></label></div>
+          <div class="form-two"><label>Phone number<input name="phone" type="tel" maxlength="30" placeholder="+233 ..."></label><label>WhatsApp number<input name="whatsapp" type="tel" maxlength="30" placeholder="+233 ..."></label></div>
+          <button class="button" type="submit">Save profile <span>→</span></button>
+        </form>
+      </section>
+
+      <section class="dash-panel" id="verification"><div class="panel-heading"><div><p class="eyebrow">Build trust with customers</p><h2>Worker verification</h2><p class="muted" id="verification-status-note">Loading verification status…</p></div></div>
+        <form id="verification-form" class="dash-form" hidden>
+          <label>Evidence summary<textarea name="evidenceSummary" maxlength="1500" rows="4" placeholder="Briefly describe your experience, training, or certificates."></textarea></label>
+          <label>Supporting documents<input name="documents" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple required><small>Up to 4 files, 5 MB each. PDF, JPEG, PNG, or WebP. Only admins can access these private files.</small></label>
+          <button class="button" type="submit">Submit for review <span>→</span></button>
+        </form>
+        <p class="form-message" id="verification-message" role="status" aria-live="polite" hidden></p>
+      </section>
+
+      <section class="dash-panel" id="reviews"><div class="panel-heading"><div><p class="eyebrow">Share your listing</p><h2>Public profile and reviews</h2><p class="muted">Customers can see approved reviews and contact you directly by phone or WhatsApp.</p></div><a class="text-link" id="public-profile-link" href="/workers.html">Find your public listing <span>↗</span></a></div></section>
+      <section class="dash-panel"><div class="panel-heading"><div><p class="eyebrow">Customer contact</p><h2>How enquiries work</h2><p class="muted">TruConnect currently connects customers through the phone and WhatsApp details on your public profile. In-app messaging is planned for a later release.</p></div></div></section>
+    </div>
+  </main>
+</body>
+</html>

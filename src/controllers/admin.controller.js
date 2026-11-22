@@ -67,7 +67,13 @@ async function listVerificationRequests(req, res) {
       .exec(),
     VerificationRequest.countDocuments(filter),
   ]);
-  const data = requests.map((request) => ({ ...request, documentCount: request.documents?.length || 0, documents: undefined }));
+  const data = requests.map((request) => ({
+    ...request,
+    documentCount: request.documents?.length || 0,
+    documents: (request.documents || []).map((document) => ({
+      downloadUrl: `/api/v1/admin/verification-requests/${request._id}/documents/${encodeURIComponent(document.storageKey)}`,
+    })),
+  }));
   res.json({ data, meta: { total } });
 }
 

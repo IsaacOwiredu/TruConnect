@@ -1,10 +1,26 @@
+const dns = require('node:dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const createApp = require('./src/app');
 const { mongoUri, port } = require('./src/config/env');
 const { connectDatabase, disconnectDatabase } = require('./src/config/database');
 
+async function connectWithRetry(attempts = 5, delayMs = 3000) {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await connectDatabase();
+      return;
+    } catch (error) {
+      console.error(`MongoDB attempt ${i} of ${attempts} failed: ${error.message}`);
+      if (i === attempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function startServer() {
   if (mongoUri) {
-    await connectDatabase();
+    await connectWithRetry();
   } else {
     console.warn('MONGODB_URI is not configured. Database-backed API routes will report unavailable.');
   }
