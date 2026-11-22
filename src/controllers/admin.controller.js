@@ -55,6 +55,8 @@ async function setUserStatus(req, res) {
 
 async function listVerificationRequests(req, res) {
   const filter = req.query.status ? { status: req.query.status } : {};
+  const page = Number(req.query.page || 1);
+  const limit = Number(req.query.limit || 20);
   const [requests, total] = await Promise.all([
     VerificationRequest.find(filter)
       .select('+documents +reviewNote')
@@ -62,7 +64,8 @@ async function listVerificationRequests(req, res) {
       .populate({ path: 'submittedBy', select: 'fullName email' })
       .populate({ path: 'reviewedBy', select: 'fullName' })
       .sort({ createdAt: 1 })
-      .limit(100)
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean()
       .exec(),
     VerificationRequest.countDocuments(filter),
@@ -74,7 +77,7 @@ async function listVerificationRequests(req, res) {
       downloadUrl: `/api/v1/admin/verification-requests/${request._id}/documents/${encodeURIComponent(document.storageKey)}`,
     })),
   }));
-  res.json({ data, meta: { total } });
+  res.json({ data, meta: { total, page, limit } });
 }
 
 async function downloadVerificationDocument(req, res, next) {
@@ -131,11 +134,13 @@ async function reviewVerification(req, res) {
 
 async function listReviews(req, res) {
   const filter = req.query.status ? { moderationStatus: req.query.status } : {};
+  const page = Number(req.query.page || 1);
+  const limit = Number(req.query.limit || 20);
   const [items, total] = await Promise.all([
-    Review.find(filter).populate('customer', 'fullName email').populate({ path: 'worker', select: 'user', populate: { path: 'user', select: 'fullName email' } }).sort({ createdAt: -1 }).limit(100).lean().exec(),
+    Review.find(filter).populate('customer', 'fullName email').populate({ path: 'worker', select: 'user', populate: { path: 'user', select: 'fullName email' } }).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
     Review.countDocuments(filter),
   ]);
-  res.json({ data: items, meta: { total } });
+  res.json({ data: items, meta: { total, page, limit } });
 }
 
 async function moderateReview(req, res) {
@@ -150,11 +155,13 @@ async function moderateReview(req, res) {
 
 async function listReports(req, res) {
   const filter = req.query.status ? { status: req.query.status } : {};
+  const page = Number(req.query.page || 1);
+  const limit = Number(req.query.limit || 20);
   const [items, total] = await Promise.all([
-    Report.find(filter).select('+resolutionNote').populate('reporter', 'fullName email').populate('targetUser', 'fullName email role accountStatus').populate('reviewedBy', 'fullName').sort({ createdAt: -1 }).limit(100).lean().exec(),
+    Report.find(filter).select('+resolutionNote').populate('reporter', 'fullName email').populate('targetUser', 'fullName email role accountStatus').populate('reviewedBy', 'fullName').sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
     Report.countDocuments(filter),
   ]);
-  res.json({ data: items, meta: { total } });
+  res.json({ data: items, meta: { total, page, limit } });
 }
 
 async function updateReport(req, res) {

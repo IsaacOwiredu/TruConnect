@@ -43,6 +43,7 @@ router.patch('/users/:id/status', csrfProtection, [
 ], validateRequest, asyncHandler(setUserStatus));
 
 router.get('/verification-requests', [
+  ...pageQuery,
   query('status').optional().isIn(['pending', 'approved', 'rejected']),
 ], validateRequest, asyncHandler(listVerificationRequests));
 router.get('/verification-requests/:id/documents/:storageKey', [
@@ -55,13 +56,13 @@ router.patch('/verification-requests/:id', csrfProtection, [
   body('reviewNote').optional().isString().trim().isLength({ max: 1000 }),
 ], validateRequest, asyncHandler(reviewVerification));
 
-router.get('/reviews', [query('status').optional().isIn(['pending', 'approved', 'rejected', 'hidden'])], validateRequest, asyncHandler(listReviews));
+router.get('/reviews', [...pageQuery, query('status').optional().isIn(['pending', 'approved', 'rejected', 'hidden'])], validateRequest, asyncHandler(listReviews));
 router.patch('/reviews/:id', csrfProtection, [
   param('id').isMongoId(),
   body('moderationStatus').isIn(['approved', 'rejected', 'hidden']),
 ], validateRequest, asyncHandler(moderateReview));
 
-router.get('/reports', [query('status').optional().isIn(['open', 'reviewing', 'resolved', 'dismissed'])], validateRequest, asyncHandler(listReports));
+router.get('/reports', [...pageQuery, query('status').optional().isIn(['open', 'reviewing', 'resolved', 'dismissed'])], validateRequest, asyncHandler(listReports));
 router.patch('/reports/:id', csrfProtection, [
   param('id').isMongoId(),
   body('status').isIn(['reviewing', 'resolved', 'dismissed']),

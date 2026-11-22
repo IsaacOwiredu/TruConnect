@@ -2,6 +2,8 @@
   const api = window.TruConnectAPI;
   if (!document.querySelector('#admin-dashboard')) return;
   const status = document.querySelector('#admin-message');
+  const pageSize = 20;
+  const pages = { verification: 1, review: 1, report: 1, user: 1 };
   const button = (label, action, className = 'button button-small') => {
     const node = api.el('button', label, className);
     node.type = 'button';
@@ -19,6 +21,29 @@
     body.append(row);
     return body;
   };
+  const pagedEndpoint = (path, pageKey, statusFilter) => {
+    const query = new URLSearchParams({ page: String(pages[pageKey]), limit: String(pageSize) });
+    if (statusFilter && statusFilter !== 'all') query.set('status', statusFilter);
+    return `${path}?${query.toString()}`;
+  };
+  function renderPagination(id, pageKey, meta, loadPage) {
+    const container = document.querySelector(`#${id}`);
+    container.replaceChildren();
+    const first = meta.total ? (meta.page - 1) * meta.limit + 1 : 0;
+    const last = Math.min(meta.page * meta.limit, meta.total);
+    container.append(api.el('span', `Showing ${first}–${last} of ${meta.total}`));
+    const previous = button('Previous', () => {
+      pages[pageKey] -= 1;
+      loadPage().catch((error) => api.message(status, error.message, true));
+    }, 'button button-small button-outline');
+    previous.disabled = meta.page <= 1;
+    const next = button('Next', () => {
+      pages[pageKey] += 1;
+      loadPage().catch((error) => api.message(status, error.message, true));
+    }, 'button button-small button-outline');
+    next.disabled = meta.page * meta.limit >= meta.total;
+    container.append(previous, next);
+  }
   async function change(path, payload, successText) {
     try {
       await api.request(path, { method: 'PATCH', body: JSON.stringify(payload), csrf: true });
@@ -47,12 +72,10 @@
 
   async function loadVerifications() {
     const statusFilter = document.querySelector('#verification-status-filter').value;
-    const endpoint = statusFilter === 'all'
-      ? '/api/v1/admin/verification-requests'
-      : `/api/v1/admin/verification-requests?status=${encodeURIComponent(statusFilter)}`;
-    const { data } = await api.request(endpoint);
+    const { data, meta } = await api.request(pagedEndpoint('/api/v1/admin/verification-requests', 'verification', statusFilter));
     const emptyMessage = statusFilter === 'all' ? 'No verification requests yet.' : `No ${statusFilter} applications.`;
     const body = clear('verification-rows', 6, data.length ? '' : emptyMessage);
+    renderPagination('verification-pagination', 'verification', meta, loadVerifications);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((request) => {
@@ -91,12 +114,10 @@
 
   async function loadReviews() {
     const statusFilter = document.querySelector('#review-status-filter').value;
-    const endpoint = statusFilter === 'all'
-      ? '/api/v1/admin/reviews'
-      : `/api/v1/admin/reviews?status=${encodeURIComponent(statusFilter)}`;
-    const { data } = await api.request(endpoint);
+    const { data, meta } = await api.request(pagedEndpoint('/api/v1/admin/reviews', 'review', statusFilter));
     const emptyMessage = statusFilter === 'all' ? 'No reviews yet.' : `No ${statusFilter} reviews.`;
     const body = clear('review-rows', 5, data.length ? '' : emptyMessage);
+    renderPagination('review-pagination', 'review', meta, loadReviews);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((review) => {
@@ -119,12 +140,10 @@
 
   async function loadReports() {
     const statusFilter = document.querySelector('#report-status-filter').value;
-    const endpoint = statusFilter === 'all'
-      ? '/api/v1/admin/reports'
-      : `/api/v1/admin/reports?status=${encodeURIComponent(statusFilter)}`;
-    const { data } = await api.request(endpoint);
+    const { data, meta } = await api.request(pagedEndpoint('/api/v1/admin/reports', 'report', statusFilter));
     const emptyMessage = statusFilter === 'all' ? 'No reports yet.' : `No ${statusFilter} reports.`;
     const body = clear('report-rows', 6, data.length ? '' : emptyMessage);
+    renderPagination('report-pagination', 'report', meta, loadReports);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((report) => {
@@ -156,8 +175,9 @@
   }
 
   async function loadUsers() {
-    const { data } = await api.request('/api/v1/admin/users?limit=100');
+    const { data, meta } = await api.request(pagedEndpoint('/api/v1/admin/users', 'user'));
     const body = clear('user-rows', 5, data.length ? '' : 'No accounts yet.');
+    renderPagination('user-pagination', 'user', meta, loadUsers);
     if (!data.length) return;
     body.replaceChildren();
     data.forEach((user) => {
@@ -225,12 +245,15 @@
 
   document.querySelector('#refresh-admin').addEventListener('click', refresh);
   document.querySelector('#verification-status-filter').addEventListener('change', () => {
+    pages.verification = 1;
     loadVerifications().catch((error) => api.message(status, error.message || 'Could not load verification requests.', true));
   });
   document.querySelector('#review-status-filter').addEventListener('change', () => {
+    pages.review = 1;
     loadReviews().catch((error) => api.message(status, error.message || 'Could not load reviews.', true));
   });
   document.querySelector('#report-status-filter').addEventListener('change', () => {
+    pages.report = 1;
     loadReports().catch((error) => api.message(status, error.message || 'Could not load reports.', true));
   });
   refresh();
