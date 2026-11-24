@@ -10,8 +10,8 @@ const requireAuth = asyncHandler(async (req, res, next) => {
     return res.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Log in to continue.' } });
   }
 
-  const user = await User.findById(userId).select('_id fullName email role accountStatus').exec();
-  if (!user || user.accountStatus !== 'active') {
+  const user = await User.findById(userId).select('_id fullName email role accountStatus sessionVersion').exec();
+  if (!user || user.accountStatus !== 'active' || Number(req.session.sessionVersion || 0) !== (user.sessionVersion || 0)) {
     req.session.destroy(() => {});
     if (req.method === 'GET' && req.accepts('html') && !req.path.startsWith('/api/')) {
       return res.redirect('/login.html');

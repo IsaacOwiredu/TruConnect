@@ -259,6 +259,12 @@ document.querySelectorAll('.local-form').forEach((form) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error?.message || 'We could not sign you in. Please try again.');
 
+      if (isRegistration) {
+        showMessage(result.data.message || 'Your account was created. Check your email for a confirmation link.');
+        form.reset();
+        return;
+      }
+
       const destinations = {
         customer: '/dashboard-customer.html',
         worker: '/dashboard-worker.html',
