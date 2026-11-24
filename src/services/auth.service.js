@@ -12,9 +12,10 @@ function sessionSave(req) {
   });
 }
 
-async function startAuthenticatedSession(req, userId) {
+async function startAuthenticatedSession(req, userId, sessionVersion = 0) {
   await sessionRegenerate(req);
   req.session.userId = String(userId);
+  req.session.sessionVersion = sessionVersion;
   req.session.csrfToken = randomBytes(32).toString('base64url');
   await sessionSave(req);
   return req.session.csrfToken;

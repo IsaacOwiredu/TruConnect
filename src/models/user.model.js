@@ -21,6 +21,19 @@ const userSchema = new mongoose.Schema({
     required: true,
     select: false,
   },
+  sessionVersion: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  passwordResetTokenHash: {
+    type: String,
+    select: false,
+  },
+  passwordResetExpiresAt: {
+    type: Date,
+    select: false,
+  },
   role: {
     type: String,
     enum: ['customer', 'worker', 'admin'],
@@ -36,5 +49,6 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true, strict: 'throw' });
 
 userSchema.index({ role: 1, accountStatus: 1, createdAt: -1 });
+userSchema.index({ passwordResetTokenHash: 1 }, { sparse: true });
 
 module.exports = mongoose.model('User', userSchema);
