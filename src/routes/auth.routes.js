@@ -5,7 +5,7 @@ const authRateLimit = require('../middleware/auth-rate-limit');
 const { csrfProtection, issueCsrfToken } = require('../middleware/csrf-protection');
 const { requireAuth } = require('../middleware/require-auth');
 const validateRequest = require('../middleware/validate-request');
-const { currentUser, login, logout, register, requestPasswordReset, resetPassword } = require('../controllers/auth.controller');
+const { currentUser, login, logout, register, requestPasswordReset, resetPassword, verifyEmail } = require('../controllers/auth.controller');
 
 const router = express.Router();
 
@@ -49,6 +49,9 @@ router.post('/reset-password', authRateLimit, csrfProtection, [
   body('token').isString().isLength({ min: 40, max: 100 }).withMessage('This reset link is invalid.'),
   body('password').isString().isByteLength({ min: 12, max: 72 }).withMessage('Use a password between 12 and 72 bytes.'),
 ], validateRequest, asyncHandler(resetPassword));
+router.post('/verify-email', authRateLimit, csrfProtection, [
+  body('token').isString().isLength({ min: 40, max: 100 }).withMessage('This confirmation link is invalid.'),
+], validateRequest, asyncHandler(verifyEmail));
 router.get('/me', requireAuth, currentUser);
 router.post('/logout', csrfProtection, logout);
 

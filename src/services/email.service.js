@@ -37,4 +37,21 @@ async function sendPasswordResetEmail(email, token) {
   });
 }
 
-module.exports = { isEmailConfigured, sendPasswordResetEmail };
+async function sendEmailVerificationEmail(email, token) {
+  const baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+  const verificationUrl = new URL('/verify-email.html', baseUrl);
+  verificationUrl.searchParams.set('token', token);
+  if (process.env.NODE_ENV === 'production' && verificationUrl.protocol !== 'https:') {
+    throw new Error('PUBLIC_BASE_URL must use HTTPS in production.');
+  }
+
+  await createTransporter().sendMail({
+    from: process.env.MAIL_FROM,
+    to: email,
+    subject: 'Confirm your TruConnect email address',
+    text: 'Confirm your email address within 24 hours: ' + verificationUrl.href,
+    html: '<p>Thanks for creating a TruConnect account.</p><p><a href="' + verificationUrl.href + '">Confirm your email address</a></p><p>This link expires in 24 hours. If you did not create an account, you can ignore this email.</p>',
+  });
+}
+
+module.exports = { isEmailConfigured, sendEmailVerificationEmail, sendPasswordResetEmail };

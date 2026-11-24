@@ -34,6 +34,18 @@ const userSchema = new mongoose.Schema({
     type: Date,
     select: false,
   },
+  emailVerified: {
+    type: Boolean,
+    default: true,
+  },
+  emailVerificationTokenHash: {
+    type: String,
+    select: false,
+  },
+  emailVerificationExpiresAt: {
+    type: Date,
+    select: false,
+  },
   role: {
     type: String,
     enum: ['customer', 'worker', 'admin'],
@@ -50,5 +62,6 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ role: 1, accountStatus: 1, createdAt: -1 });
 userSchema.index({ passwordResetTokenHash: 1 }, { sparse: true });
+userSchema.index({ emailVerificationTokenHash: 1 }, { sparse: true });
 
 module.exports = mongoose.model('User', userSchema);
