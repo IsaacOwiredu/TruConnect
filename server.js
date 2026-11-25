@@ -1,10 +1,8 @@
 const dns = require('node:dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
-const createApp = require('./src/app');
 const { mongoUri, port } = require('./src/config/env');
-const { connectDatabase, disconnectDatabase } = require('./src/config/database');
-
+const createApp = require('./src/app');
 async function connectWithRetry(attempts = 5, delayMs = 3000) {
   for (let i = 1; i <= attempts; i++) {
     try {
