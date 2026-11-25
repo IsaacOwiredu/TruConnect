@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Find skilled local professionals across Ghana with TruConnect."><title>TruConnect — Good work starts here</title><link rel="stylesheet" href="/css/styles.css"><script src="/js/main.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Find skilled local professionals across Ghana with TruConnect."><title>TruConnect — Good work starts here</title><link rel="stylesheet" href="/css/styles.css"><script src="/js/main.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
 <body>
   <header class="site-header"><a class="brand" href="/">tru<span>connect</span><i>.</i></a><nav class="main-nav"><a href="/workers.html">Find a professional</a><a href="#how">How it works</a><a href="/login.html">Log in</a><a class="button button-small" href="/register.html">Join TruConnect <span>↗</span></a></nav><button class="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button></header>
   <main>
@@ -8,11 +12,21 @@
     <section class="category-band"><div><span class="eyebrow">Find your kind of help</span><h2>What needs doing?</h2></div><div class="category-chips" id="home-category-chips"><a href="/workers.html">Explore all <span>→</span></a></div></section>
     <section class="how-section" id="how"><div class="section-heading"><p class="eyebrow">Simple by design</p><h2>From “I need a hand”<br>to <em>“job well done.”</em></h2></div><div class="steps"><article><span class="step-no">01</span><span class="step-icon">⌕</span><h3>Find your person</h3><p>Search by skill or location and browse local professional profiles.</p></article><article><span class="step-no">02</span><span class="step-icon">✳</span><h3>Choose with confidence</h3><p>See experience, ratings, reviews and verification status at a glance.</p></article><article><span class="step-no">03</span><span class="step-icon">↗</span><h3>Connect directly</h3><p>Reach out by phone or WhatsApp and make a plan together.</p></article></div></section>
     <section class="join-banner"><div><p class="eyebrow">Your next opportunity is closer</p><h2>Good at what you do?<br><em>Let people find you.</em></h2><p>Create your profile and put your skills in front of your community.</p><a class="button button-light" href="/register.html?role=worker">Create your worker profile <span>→</span></a></div><div class="banner-mark">t<span>c</span><i>.</i></div></section>
-<footer><span class="brand">Tru<span>Connect</span></span><span>Connecting skills across Ghana</span></footer>
+       </main>
 
-</body></html>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a href="/" class="brand" aria-label="truconnect home">tru<span>connect</span><i>.</i></a>
+    <p class="tagline">Connecting skills across Ghana.</p>
+    <p class="rights">&copy; <span id="year">2026</span> truconnect. All rights reserved.</p>
+  </div>
 
+  <div class="footer-mark" aria-hidden="true">tc<i>.</i></div>
+</footer>
 
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 
-
-</main><footer class="site-footer"> <small>© 2026 TruConnect</small></footer>
+</body>
+</html>
