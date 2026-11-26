@@ -9,37 +9,137 @@ menuButton?.addEventListener('click', () => {
   if (dashboardSidebar) dashboardSidebar.classList.toggle('open', open);
 });
 
-const homeCategoryChips = document.querySelector('#home-category-chips');
-if (homeCategoryChips) {
+const homeCategoryGrid = document.querySelector('#home-category-grid');
+if (homeCategoryGrid) {
   fetch('/api/v1/categories')
     .then(async (response) => {
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message || 'Categories are temporarily unavailable.');
+      if (!response.ok) throw new Error(result.error?.message || 'Services are temporarily unavailable.');
       return result.data;
     })
     .then((categories) => {
       const fragment = document.createDocumentFragment();
-      categories.slice(0, 5).forEach((category) => {
+      categories.slice(0, 8).forEach((category) => {
         const link = document.createElement('a');
+        link.className = 'home-category-card';
         link.href = `/workers.html?category=${encodeURIComponent(category.slug)}`;
         const icon = document.createElement('span');
+        icon.className = 'home-category-icon';
         icon.setAttribute('aria-hidden', 'true');
         icon.textContent = category.icon || '✳';
-        link.append(icon, document.createTextNode(` ${category.name}`));
+        const copy = document.createElement('span');
+        copy.className = 'home-category-copy';
+        const name = document.createElement('strong');
+        name.textContent = category.name;
+        const description = document.createElement('small');
+        description.textContent = category.description || 'Find skilled local professionals';
+        const arrow = document.createElement('span');
+        arrow.className = 'home-category-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '→';
+        copy.append(name, description);
+        link.append(icon, copy, arrow);
         fragment.append(link);
       });
-      const all = document.createElement('a');
-      all.href = '/workers.html';
-      all.append(document.createTextNode('Explore all '));
-      const arrow = document.createElement('span');
-      arrow.setAttribute('aria-hidden', 'true');
-      arrow.textContent = '→';
-      all.append(arrow);
-      fragment.append(all);
-      homeCategoryChips.replaceChildren(fragment);
+      if (!categories.length) {
+        homeCategoryGrid.replaceChildren(Object.assign(document.createElement('p'), { className: 'home-loading', textContent: 'Services will appear here soon.' }));
+        return;
+      }
+      homeCategoryGrid.replaceChildren(fragment);
     })
     .catch(() => {
-      // Keep the Explore all link when the database is not available.
+      homeCategoryGrid.replaceChildren(Object.assign(document.createElement('p'), { className: 'home-loading', textContent: 'Browse professionals in the directory while services load.' }));
+    });
+}
+
+const homeFeaturedGrid = document.querySelector('#home-featured-grid');
+if (homeFeaturedGrid) {
+  const photoClasses = ['photo-one', 'photo-two', 'photo-three'];
+  fetch('/api/v1/workers?sort=rating&limit=3')
+    .then(async (response) => {
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message || 'Professionals are temporarily unavailable.');
+      return result.data;
+    })
+    .then((workers) => {
+      if (!workers.length) {
+        homeFeaturedGrid.replaceChildren(Object.assign(document.createElement('p'), { className: 'home-loading', textContent: 'Local professional profiles will appear here as workers join.' }));
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      workers.forEach((worker, index) => {
+        const profileUrl = `/worker-profile.html?id=${encodeURIComponent(worker._id)}`;
+        const card = document.createElement('article');
+        card.className = 'worker-card';
+        const photo = document.createElement('a');
+        photo.className = `worker-photo ${photoClasses[index % photoClasses.length]}`;
+        photo.href = profileUrl;
+        photo.setAttribute('aria-label', `View ${worker.fullName}'s profile`);
+        const initials = document.createElement('span');
+        initials.className = 'worker-initials';
+        initials.textContent = worker.fullName.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('');
+        const availability = document.createElement('span');
+        availability.className = 'available-pill';
+        const dot = document.createElement('i');
+        availability.append(dot, document.createTextNode(worker.availability === 'available' ? ' Available' : ' Unavailable'));
+        photo.append(initials, availability);
+        if (worker.profileImagePath) {
+          const image = document.createElement('img');
+          image.className = 'worker-photo-image';
+          image.src = worker.profileImagePath;
+          image.alt = '';
+          image.loading = 'lazy';
+          photo.prepend(image);
+        }
+        card.append(photo);
+
+        const info = document.createElement('div');
+        info.className = 'worker-info';
+        const title = document.createElement('div');
+        title.className = 'worker-title';
+        const heading = document.createElement('h2');
+        const name = document.createElement('a');
+        name.href = profileUrl;
+        name.textContent = worker.fullName;
+        heading.append(name);
+        title.append(heading);
+        if (worker.verificationStatus === 'verified') {
+          const badge = document.createElement('span');
+          badge.className = 'verified-badge';
+          badge.textContent = '✓';
+          title.append(badge);
+        }
+        const trade = document.createElement('p');
+        trade.className = 'worker-trade';
+        trade.textContent = `${worker.categories?.[0]?.name || 'Service professional'} · ${worker.location?.city || 'Ghana'}`;
+        const rating = document.createElement('p');
+        rating.className = 'rating';
+        if (worker.reviewCount) {
+          const star = document.createElement('span');
+          star.textContent = '★';
+          rating.append(star, document.createTextNode(` ${worker.averageRating.toFixed(1)} `));
+          const count = document.createElement('small');
+          count.textContent = `(${worker.reviewCount} ${worker.reviewCount === 1 ? 'review' : 'reviews'})`;
+          rating.append(count);
+        } else {
+          rating.textContent = 'New professional';
+        }
+        const bottom = document.createElement('div');
+        bottom.className = 'card-bottom';
+        const skills = document.createElement('span');
+        skills.textContent = (worker.skills || []).slice(0, 2).join(' · ') || 'View skills and experience';
+        const view = document.createElement('a');
+        view.href = profileUrl;
+        view.textContent = 'View profile →';
+        bottom.append(skills, view);
+        info.append(title, trade, rating, bottom);
+        card.append(info);
+        fragment.append(card);
+      });
+      homeFeaturedGrid.replaceChildren(fragment);
+    })
+    .catch(() => {
+      homeFeaturedGrid.replaceChildren(Object.assign(document.createElement('p'), { className: 'home-loading', textContent: 'Local professional profiles will appear here as workers join.' }));
     });
 }
 

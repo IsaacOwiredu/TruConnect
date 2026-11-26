@@ -1,7 +1,8 @@
 const dns = require('node:dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 const { mongoUri, port } = require('./src/config/env');
+const dnsServers = (process.env.DNS_SERVERS || '').split(',').map((server) => server.trim()).filter(Boolean);
+if (dnsServers.length) dns.setServers(dnsServers);
+
 const { connectDatabase, disconnectDatabase } = require('./src/config/database');
 const createApp = require('./src/app');
 
